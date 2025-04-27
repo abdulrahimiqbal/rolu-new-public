@@ -1,0 +1,154 @@
+---
+description: Product Requirement
+globs: 
+alwaysApply: false
+---
+# Rolu Educational Gaming Platform - PRD
+
+## 1. Overview
+**Vision**: Engage users through gamified education with white-label customization capabilities for brands  
+**Core Concept**: 3-lane runner game integrated with quizzes and educational content, supporting multiple brand configurations
+
+## 2. Key Features
+
+### 2.1 Core Game Architecture
+- **Three-Page Navigation** (Bottom Tab Bar):
+  - Home: Promotional cards, brand selection
+  - Gameplay: Core gaming interface
+  - Profile: User stats and management
+- **Multi-Language Support**: English, Spanish, Turkish, Arabic
+- **Device Optimization**: Mobile-first design with responsive UI
+
+### 2.2 Game Mechanics
+- **3-Lane Runner System**:
+  - Lane-based character control
+  - Obstacle avoidance mechanics
+  - Collectible items system
+- **Scoring & Progression**:
+  - Distance-based XP calculation
+  - Collectible-based point system
+  - Pause/Resume functionality
+- **Post-Game Analysis**:
+  - Performance summary screen
+  - Rolu token earnings display
+  - XP progression update
+
+### 2.3 Educational Integration
+- **In-Game Quizzing**:
+  - Multiple-choice questions with explanations
+  - Contextual information displays
+- **Reward System**:
+  - Rolu tokens for correct answers
+  - XP for distance traveled
+- **Progress Tracking**:
+  - Level progression system
+  - Achievement titles (e.g., "Geography Master")
+
+### 2.4 User Management
+- **World ID Integration**:
+  - Secure authentication
+  - Wallet connectivity
+- **Profile System**:
+  - Custom avatars/images
+  - Stats dashboard (XP, Rolu, High Scores)
+  - Level progression tracking
+
+### 2.5 Brand Customization
+- **Visual Customization**:
+  - Backgrounds
+  - Characters
+  - Obstacles
+  - Collectibles
+- **Content Configuration**:
+  - Demographic-based content targeting
+  - Individual user customization
+- **Brand Packages**:
+  - Saved configuration sets
+  - Translation management (Google Cloud API)
+  - Brand parameter management
+
+### 2.6 Admin Dashboard
+- **Game Configuration**:
+  - Quiz/content management
+  - Scoring parameters (XP/Rolu rates)
+  - Live config management
+- **Brand Management**:
+  - Create/load brand packages
+  - Translation workflows
+  - Asset management (image upload)
+- **Promotional System**:
+  - Promo card creation
+  - Call-to-action management
+  - Card activation scheduling
+
+## 3. Technical Specifications
+
+### 3.1 Stack Architecture
+- **Frontend**: Next.js 14, Tailwind CSS, shadcn
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL (Neon Serverless)
+- **State Management**: TanStack Query
+- **Auth**: World ID Mini Kit
+- **Translation**: Google Cloud Translation API
+
+### 3.2 Deployment
+- **Hosting**: Vercel Serverless
+- **Storage**: Cloud-based asset storage
+- **CI/CD**: GitHub Actions integration
+
+## 4. Workflow Requirements
+
+### 4.1 User Workflows
+- **Authentication**:
+  - World ID login
+  - Wallet connection
+- **Gameplay**:
+  - Lane switching mechanics
+  - Quiz interaction
+  - Pause/resume
+- **Progression**:
+  - Level advancement
+  - Title unlocks
+  - Token redemption
+
+### 4.2 Admin Workflows
+- **Content Management**:
+  - Quiz creation/editing
+  - Information card configuration
+- **Brand Operations**:
+  - Visual asset management
+  - Translation pipeline
+  - Configuration packaging
+- **Promotion Management**:
+  - Card scheduling
+  - CTA configuration
+  - Performance analytics
+
+## 5. Additional Features
+
+### 5.1 Wallet Integration
+- Worldcoin wallet connectivity
+- Rolu token transactions
+- Balance display in profile
+
+### 5.2 Localization System
+- Dynamic content translation
+- Browser language detection
+- Static content storage
+
+## 6. Glossary
+- **Brand Config**: Complete visual/content package
+- **Game Config**: Live gameplay parameters
+- **Promo Card**: Homepage promotional unit
+- **Rolu Token**: In-game currency (ERC-20 compatible)
+
+## 7. Non-Functional Requirements
+- **Performance**: <2s load times for core gameplay
+- **Security**: World ID auth compliance
+- **Scalability**: Support 10k concurrent users
+- **Localization**: 4 language support at launch
+
+## 8. Compliance Requirements
+- WORLD Mini App guidelines
+- Mobile-first responsive design
+- Cross-browser compatibility

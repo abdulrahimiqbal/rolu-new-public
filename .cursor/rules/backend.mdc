@@ -1,0 +1,48 @@
+---
+description: Backend
+globs: 
+alwaysApply: false
+---
+# Backend & Database Plan
+## Backend Tech Stack
+- **Framework**: Next.js (API routes for server-side functionality)
+## API Endpoints
+1. **Authentication**
+- POST /api/auth/login - Authenticate users using World ID.
+- GET /api/users/profile - Fetch user profile information.
+2. **Game Management**
+- GET /api/game/start - Initialize a game session with selected configuration.
+- POST /api/game/submit - Submit game results and update scores.
+3. **Quiz Management**
+- GET /api/quizzes - Fetch quiz questions based on configurations.
+- POST /api/quizzes - Manage quiz content in the admin dashboard.
+4. **User Management**
+- GET /api/users/stats - Fetch user statistics such as XP and Rolu balance.
+- POST /api/users/update - Update user profiles.
+## Database Design (PostgreSQL)
+### Tables
+1. **Users**
+- ID
+- World ID
+- Username
+- Profile Picture
+- XP
+- Rolu Balance
+- Level
+2. **Games**
+- ID
+- Game Configuration (JSON for customizable elements)
+- Game Metrics (score, distance traveled, etc.)
+3. **Quizzes**
+- ID
+- Question
+- Options (JSON)
+- Correct Answer
+- Explanations (for each option)
+4. **Translations**
+- ID
+- Question ID
+- Language
+- Translated Text
+### Translation Logic
+- Store static translations locally as JSON and utilize Google Cloud Translation API for dynamic translations when toggled.

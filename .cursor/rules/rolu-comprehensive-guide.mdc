@@ -1,0 +1,425 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Rolu Educational Gaming Platform - Comprehensive Development Guide
+
+This document serves as the primary guide for AI assistance in developing the Rolu platform. It outlines the architecture, standards, features, and implementation details required for consistent and high-quality development.
+
+## 1. Code Architecture and Organization
+
+### 1.1. Project Structure
+
+Maintain the defined Next.js 14 project structure. Place files logically within these core directories:
+
+-   `/app`: Next.js app router components (Pages and Layouts).
+-   `/components`: Reusable UI components.
+    -   `/ui`: Base UI elements (e.g., shadcn).
+    -   `/game`: Components specific to the 3-lane runner game.
+    -   `/quiz`: Components related to the educational quiz system.
+    -   `/brand`: Components for brand customization and white-labeling.
+    *   `/admin`: Components for the administrative dashboard.
+-   `/lib`: Shared utility functions, constants, and core logic.
+-   `/api`: Server-side API route handlers.
+-   `/hooks`: Custom React hooks for state management and logic reuse.
+-   `/contexts`: React context providers for global state.
+-   `/types`: TypeScript type definitions and interfaces.
+-   `/prisma`: Database schema (`schema.prisma`), migrations, and Prisma client instance.
+-   `/public`: Static assets (images, fonts - excluding game assets managed via Cloudinary).
+-   `/styles`: Global CSS styles and theme configuration.
+-   `/locales`: Translation files for internationalization (i18n).
+
+*   **Rule:** Adhere strictly to this structure. New features should create or utilize files within the appropriate directories.
+*   **Component Granularity:** Follow the "one component per file" principle. Co-locate styles and tests where appropriate.
+
+### 1.2. Naming Conventions
+
+Consistency in naming is crucial. Follow these conventions:
+
+-   **Files**: `kebab-case` (e.g., `game-controller.tsx`, `user-profile.ts`).
+-   **Components**: `PascalCase` (e.g., `GameController`, `UserProfileCard`).
+-   **Functions/Variables**: `camelCase` (e.g., `handleLaneSwitch`, `playerScore`).
+-   **Database Tables/Fields**: `snake_case` (e.g., `game_sessions`, `user_id`). Use Prisma's mapping feature (`@map`) if model names need to differ.
+-   **API Routes**: `kebab-case` in the URL path (e.g., `/api/v1/game-config`).
+-   **CSS Classes**: BEM (`block__element--modifier`) combined with Tailwind CSS utility classes. Prioritize utility classes.
+-   **TypeScript Types/Interfaces**: `PascalCase` (e.g., `UserProfile`, `GameConfig`).
+
+### 1.3. Component Architecture
+
+Design components for reusability, maintainability, and performance:
+
+-   **Composition:** Build complex UIs by composing smaller, single-purpose components.
+-   **Atomic Design:** Conceptually organize components into atoms (basic elements), molecules (groups of atoms), and organisms (complex sections).
+-   **Props:** Define clear, strongly-typed interfaces (`type` or `interface`) for all component props. Avoid overly complex prop objects.
+-   **Logic Separation:** Extract complex logic, state management, and side effects into custom hooks (`useX`) to keep components focused on presentation.
+-   **Error Boundaries:** Wrap critical sections (like the game canvas or quiz interface) with React Error Boundaries for graceful failure handling.
+-   **Single Responsibility:** Each component should ideally have one primary responsibility.
+
+## 2. Coding Standards
+
+### 2.1. TypeScript Usage
+
+Leverage TypeScript's static typing features rigorously:
+
+-   **Strict Mode:** Enable and adhere to `strict` mode in `tsconfig.json`.
+-   **Explicit Types:** Define explicit types for function parameters, return values, variables, props, and state.
+-   **Avoid `any`:** Do not use the `any` type. Use `unknown` and perform type checking/narrowing if the type is truly unknown. Use specific types whenever possible.
+-   **Interfaces/Types:** Use `interface` for defining the shape of objects and `type` for unions, intersections, primitives, and utility types.
+-   **Domain Types:** Create specific types for core game concepts (`PlayerState`, `ObstacleType`, `Question`), quiz structures, and brand configurations in `/types`.
+-   **Discriminated Unions:** Use discriminated unions for modeling states or variants (e.g., `type GameState = { status: 'playing'; score: number } | { status: 'paused' } | { status: 'ended'; finalScore: number };`).
+-   **Generics:** Utilize generics for creating reusable components, functions, and types (e.g., `fetchData<T>(url: string): Promise<T>`).
+-   **Readonly:** Use `readonly` modifiers where appropriate to enforce immutability.
+
+### 2.2. Performance Optimization
+
+Ensure the application is performant, especially the game:
+
+-   **Memoization:** Use `React.memo` for components that render frequently with the same props, especially within the game loop. Use `useMemo` and `useCallback` to memoize expensive calculations and functions.
+-   **List Keys:** Provide stable and unique `key` props when rendering lists of elements. Avoid using array indices as keys if the list can change order.
+-   **Lazy Loading:** Use `React.lazy` and `Suspense` for code-splitting routes and components that are not immediately required. Use `next/dynamic` for dynamic imports.
+-   **Virtualization:** Implement virtualization (e.g., using `react-window` or `react-virtualized`) for rendering long lists (leaderboards, quiz results, admin tables).
+-   **Asset Optimization:** Use `next/image` for automatic image optimization (resizing, format conversion, lazy loading). Preload critical game assets.
+-   **Bundle Analysis:** Regularly analyze the bundle size using tools like `@next/bundle-analyzer` to identify and optimize large dependencies.
+-   **Debounce/Throttle:** Use debounce or throttle techniques for handling frequent events like window resizing or input changes.
+-   **Server Components:** Leverage React Server Components (RSC) in Next.js 14 for rendering static parts of the UI on the server, reducing client-side JavaScript.
+
+### 2.3. State Management
+
+Choose the appropriate state management tool for the scope:
+
+-   **Server State:** Use **TanStack Query (React Query)** for fetching, caching, synchronizing, and updating server state. Manage cache invalidation effectively.
+-   **Global Client State:** Use **React Context** for low-frequency updates of global state like user authentication status, theme/brand settings, or global game configuration. Avoid putting high-frequency update state in Context.
+-   **Local Component State:** Use `useState` for simple local state. Use `useReducer` for complex state logic within a component or closely related components (e.g., managing form state, game state within the core game component).
+-   **URL State:** Consider using the URL query parameters for state that should be bookmarkable or shareable (e.g., filters, current quiz ID). Use Next.js router for updates.
+-   **Persistent State:** Use `localStorage` or `sessionStorage` for client-side persistence of user preferences (e.g., volume settings, language preference) but be mindful of storage limits and security.
+-   **Immutability:** Always treat state as immutable. When updating state objects or arrays, create new instances instead of modifying the existing ones directly.
+
+## 3. Feature Implementation Guidelines
+
+### 3.1. Game Implementation (3-Lane Runner)
+
+Develop the core game adhering to these principles:
+
+*   **Game Loop:** Implement a stable game loop using `requestAnimationFrame` for smooth rendering synchronized with the browser's rendering cycle.
+*   **State Machine:** Use a finite state machine (FSM) pattern (e.g., using `useReducer` or a library like XState) to manage distinct game states (e.g., `idle`, `loading`, `ready`, `playing`, `paused`, `gameOver`, `submittingScore`). This clarifies transitions and prevents invalid states.
+*   **Entity Management:** Structure game objects (player, obstacles, collectibles) as entities with properties (position, type, state) and methods/functions for behavior.
+*   **Rendering:** Separate game logic (updates) from rendering. The game loop should first update the state of all entities, then render the current state. Consider using Canvas API for rendering if performance demands it, or DOM elements for simpler scenarios.
+*   **Collision Detection:** Implement efficient collision detection logic between the player and obstacles/collectibles suitable for a 3-lane system.
+*   **Procedural Generation:** Use predictable randomization algorithms (seeded random number generators if replayability or fairness is key) for generating obstacle patterns and collectible placements. Avoid true randomness that could lead to unfair scenarios.
+*   **Difficulty Scaling:** Implement progressive difficulty. Increase player speed, obstacle frequency, or introduce complex patterns based on distance traveled or time elapsed.
+*   **Controls:** Implement responsive touch controls (swipe left/right/up) for lane switching and actions (like jumping if applicable). Also, provide keyboard controls for desktop accessibility.
+*   **Asset Management:**
+    *   **Cloudinary:** ALL dynamic game assets (player skins, obstacle visuals, power-up effects, particles, backgrounds) MUST be uploaded to Cloudinary.
+    *   **Database:** Store the Cloudinary URLs (secure URLs if needed) for these assets in the database, potentially linked to game configuration, user profiles (for skins), or level data.
+    *   **Preloading:** Preload essential game assets before the game starts to prevent pop-in or lag during gameplay. Show loading indicators.
+*   **Physics (Simple):** Implement basic movement physics (e.g., acceleration/deceleration for lane switching, gravity if jumping is implemented). Keep it simple and predictable for a lane runner.
+*   **Scoring:** Implement a clear scoring system based on distance traveled, collectibles gathered, and potentially time bonuses or multipliers from power-ups.
+*   **Power-ups:** Design and implement various power-ups (e.g., invincibility, score multiplier, magnet for collectibles) with clear visual feedback and durations.
+*   **Game Over:** Handle the game-over state clearly, showing the final score, reason for game over, and options to restart or return to the menu.
+*   **Pause/Resume:** Allow players to pause and resume the game reliably. Ensure game state is preserved.
+
+### 3.2. Quiz Integration
+
+Build a flexible and engaging quiz system:
+
+*   **Modularity:** Design the quiz engine to be data-driven. It should accept quiz data (questions, answers, types, metadata) in a defined format (e.g., JSON).
+*   **Question Types:** Support various question types (multiple-choice, true/false, fill-in-the-blank, matching). Design components for each type.
+*   **Timing:** Implement optional timers per question or for the entire quiz. Provide clear visual feedback for time remaining.
+*   **Multimedia:** Allow embedding of images, audio, or even short video clips within questions and answer choices, referencing assets appropriately (potentially via Cloudinary).
+*   **Feedback:** Provide immediate feedback after each answer (correct/incorrect). Include detailed explanations for why an answer is correct or incorrect – this is crucial for the educational aspect.
+*   **Scoring:** Integrate quiz scores with the overall player progress or game mechanics. Consider scoring based on correctness and speed.
+*   **State Management:** Manage quiz state (current question index, user answers, score, timer) effectively, potentially using `useReducer`.
+*   **Review Mode:** Optionally allow users to review their answers and the correct solutions after completing a quiz.
+*   **Accessibility:** Ensure quiz interactions are accessible via keyboard and screen readers. Use appropriate ARIA attributes.
+*   **Integration:** Seamlessly integrate quizzes into the game flow (e.g., triggered at certain points, required to unlock content).
+*   **Content Management:** Plan how quiz content will be created and managed (e.g., admin interface, importing from specific formats).
+
+### 3.3. Localization (i18n)
+
+Implement robust multi-language support:
+
+*   **Framework:** Utilize `next-intl` or a similar library integrated with Next.js for managing translations and routing.
+*   **Namespaces:** Organize translations into namespaces (e.g., `common`, `game`, `quiz`, `profile`) to manage scope and optimize loading. Store these in `/locales`.
+*   **JSON Format:** Use structured JSON files for storing translation strings (`/locales/{locale}/{namespace}.json`).
+*   **RTL Support:** Implement proper styling and layout adjustments for right-to-left languages like Arabic. Use logical CSS properties (e.g., `margin-inline-start` instead of `margin-left`).
+*   **Fallback:** Configure fallback languages (e.g., English) if a translation string is missing in the selected locale.
+*   **Dynamic Loading:** Load translation files dynamically based on the detected or selected user locale.
+*   **Pluralization/Formatting:** Use library features for handling pluralization rules and formatting dates, numbers, and currencies according to locale conventions.
+*   **Language Selection:** Provide a user interface element for users to select their preferred language. Persist this preference (e.g., in `localStorage` or user profile).
+*   **Content:** Ensure all user-facing text, including UI elements, game instructions, quiz content, and error messages, is internationalized.
+
+### 3.4. Brand Customization (White-Labeling)
+
+Enable visual customization for different brands:
+
+*   **Theme Provider:** Create a React Context-based `ThemeProvider` that consumes a brand configuration object.
+*   **Configuration Object:** Define a clear TypeScript interface for the brand configuration (e.g., `BrandConfig`), including primary/secondary colors, logo URLs, typography settings, specific icons, etc.
+*   **CSS Variables:** Use CSS custom properties (variables) extensively for styling. The `ThemeProvider` should inject the brand-specific values into these variables at the root level.
+*   **Asset Swapping:** The configuration should include URLs (likely from Cloudinary) for brand-specific assets like logos, background images, or custom icons. Components should reference these URLs from the theme context.
+*   **Component Styling:** Components should primarily use CSS variables defined by the theme for colors, fonts, spacing, etc., ensuring they adapt automatically. Use Tailwind's arbitrary value support if needed (`bg-[var(--brand-primary)]`).
+*   **Configuration Source:** Determine how the brand configuration is loaded (e.g., based on domain, user affiliation stored in DB, selected during setup).
+*   **Validation:** Implement validation for the brand configuration object to ensure required fields are present and assets meet format/size requirements.
+*   **Lazy Loading:** Lazy load brand-specific assets (especially images) if they are large or numerous.
+*   **Theme Switching:** If multiple themes need to be switchable dynamically without a page reload, ensure the `ThemeProvider` updates the CSS variables correctly.
+*   **Defaults:** Provide a default Rolu theme as a fallback.
+
+### 3.5. Homepage
+
+The main landing page after authentication:
+
+*   **Entry Point:** Serve as the central hub for the user experience.
+*   **Game Access:** Prominent "Start Game" or "Play Now" button/section.
+*   **Featured Content:** Showcase new or featured quizzes, game modes, or educational topics.
+*   **Progress Summary:** Display key user stats like level, points, recent achievements, or progress towards a goal.
+*   **Navigation:** Clear navigation links to Profile, Leaderboards, Settings, Help/About sections.
+*   **Announcements:** A section for platform news, updates, or events.
+*   **Visual Appeal:** Engaging and on-brand visuals. Potentially dynamic elements related to game progress or themes.
+*   **Responsiveness:** Fully responsive design adapting to mobile, tablet, and desktop views.
+*   **Loading State:** Proper loading indicators while fetching user data or featured content.
+*   **Personalization:** Potentially personalize displayed content based on user history or preferences.
+
+### 3.6. Profile Page
+
+User's personal space within the platform:
+
+*   **User Information:** Display username, avatar (customizable?), join date, potentially linked World ID information (non-sensitive).
+*   **Statistics:** Detailed breakdown of game performance (high scores per mode, total distance, average score), quiz performance (accuracy, topics mastered), playtime.
+*   **Achievements/Badges:** A gallery showcasing earned achievements or badges with descriptions and unlock criteria.
+*   **Customization:** Options to change avatar, potentially select cosmetic items earned (if applicable), or adjust profile visibility (if public profiles exist).
+*   **Account Settings:** Access to manage account-related settings:
+    *   Notification preferences.
+    *   Language selection.
+    *   Accessibility options (e.g., color contrast modes, font size).
+    *   Linked accounts (if any beyond World ID).
+    *   Data management (export/delete data - GDPR compliance).
+*   **Activity Feed:** Optionally show a feed of recent activity (games played, quizzes completed, achievements unlocked).
+*   **Security:** Ensure only the authenticated user can access and modify their profile data.
+
+### 3.7. Treasure Chest Feature
+
+A potential reward or engagement mechanism:
+
+*   **Reward System:** Implement as a way to reward players for specific actions (e.g., daily login, achieving milestones, completing challenges, high scores).
+*   **Content:** Chests can contain various rewards:
+    *   In-game currency.
+    *   Cosmetic items (player skins, trail effects).
+    *   Temporary power-ups for the next game run.
+    *   Quiz hints or passes.
+    *   Experience points or progress boosters.
+*   **Rarity:** Introduce different tiers of treasure chests (common, rare, epic) with varying probabilities for better rewards.
+*   **Acquisition:** Define clear methods for earning chests. Make it feel rewarding, not purely random grind.
+*   **Opening Mechanic:** Design an engaging visual animation for opening the chest and revealing the reward(s).
+*   **Inventory:** If rewards are persistent items (cosmetics), implement a simple inventory system accessible via the profile.
+*   **Frequency/Limits:** Balance the frequency of obtaining chests to maintain engagement without devaluing rewards. Consider daily or weekly limits.
+*   **Monetization (Caution):** If considering monetization (e.g., selling keys/chests), implement ethically and transparently, especially for an educational platform. Often best avoided.
+*   **Integration:** Link treasure chest rewards thematically to the game or educational content.
+
+### 3.8. Blockchain Implementation (World ID)
+
+Focus on secure and user-friendly authentication:
+
+*   **World ID Mini Kit:** Utilize the official World ID Mini Kit for seamless integration. Follow their documentation closely for frontend implementation.
+*   **Authentication Flow:**
+    1.  User clicks "Sign in with World ID" button (using the Mini Kit UI component).
+    2.  User scans QR code with World App and authenticates.
+    3.  Mini Kit returns a ZK Proof (`proof` and `nullifier_hash`) to the frontend.
+    4.  Frontend sends this proof to the backend API (`/api/auth/worldid-verify`).
+*   **Backend Verification:**
+    1.  Backend API receives the proof, `nullifier_hash`, and `action_id`.
+    2.  Backend verifies the proof against the World ID Developer Portal App ID and the defined `action_id` using the World ID verification service or SDK.
+    3.  **Crucially:** Check the `nullifier_hash` against the database to ensure this proof hasn't been used before (prevents replay attacks).
+    4.  If verification succeeds and the nullifier is unique:
+        *   Find or create a user record associated with this `nullifier_hash`.
+        *   Store the `nullifier_hash` in the database to prevent reuse.
+        *   Generate a JWT (JSON Web Token) for the user session.
+    5.  Return the JWT to the frontend.
+*   **Session Management:** Frontend stores the JWT securely (e.g., httpOnly cookie) and includes it in subsequent API requests. Backend middleware verifies the JWT on protected routes.
+*   **User Linking:** The `nullifier_hash` is the unique, anonymous identifier for the user. Link all user data (progress, settings) to this identifier or an internal `userId` associated with it.
+*   **Action IDs:** Use distinct `action_id` strings for different actions requiring World ID verification (e.g., `rolu-login`, `rolu-claim-reward`).
+*   **Error Handling:** Handle potential errors during the World ID flow gracefully (e.g., invalid proof, network issues, user cancellation).
+*   **Privacy:** Remember World ID provides proof of personhood anonymously. Do not request or store unnecessary personal data unless explicitly provided by the user through other means.
+
+### 3.9. Batch Processing
+
+Implement background jobs for tasks not suitable for synchronous processing:
+
+*   **Use Cases:**
+    *   **Analytics Aggregation:** Regularly process raw game/quiz data into aggregated reports (daily active users, average scores, completion rates).
+    *   **Leaderboard Updates:** Calculate and update leaderboards periodically (e.g., hourly, daily) instead of real-time if load is high.
+    *   **Content Updates:** Process bulk uploads of new quiz questions or game assets.
+    *   **Notifications:** Send batched email digests or push notifications (if applicable).
+    *   **Data Cleanup:** Perform routine database maintenance (e.g., archiving old sessions, cleaning up temporary data).
+*   **Technology:** Consider using:
+    *   Job queues (e.g., BullMQ, RabbitMQ, AWS SQS) with dedicated worker processes/services.
+    *   Serverless functions triggered on a schedule (e.g., Vercel Cron Jobs, AWS Lambda scheduled events).
+    *   Database-level scheduled procedures (less common in Node.js stacks).
+*   **Implementation:**
+    *   Define clear job types/tasks.
+    *   Ensure jobs are idempotent (running multiple times produces the same result).
+    *   Implement robust error handling and retry mechanisms for failed jobs.
+    *   Monitor job execution status, duration, and failures.
+    *   Trigger jobs via schedules, API calls, or database events.
+*   **Scalability:** Design batch processing systems to scale independently from the main web application.
+
+### 3.10. Notifications
+
+Provide timely and relevant information to users:
+
+*   **Types:**
+    *   **In-App:** Real-time notifications displayed within the application interface (e.g., using a toast library like `react-hot-toast`, or a dedicated notification center UI). Use cases: achievements unlocked, rewards received, friend requests (if social features exist).
+    *   **Push Notifications (Optional):** If a native app wrapper (e.g., Capacitor/Ionic) or PWA is used, implement push notifications for re-engagement (e.g., daily challenge reminders, new content alerts). Requires user opt-in.
+    *   **Email Notifications (Optional):** For less frequent communication like weekly summaries or account security alerts. Requires collecting email addresses and user consent.
+*   **Triggers:** Define events that trigger notifications (e.g., completing a quiz with a high score, reaching a game milestone, receiving a treasure chest).
+*   **User Preferences:** Provide granular controls in the user profile/settings page for users to enable/disable different types of notifications.
+*   **Delivery:**
+    *   For in-app: Use WebSockets or Server-Sent Events (SSE) for real-time delivery, or poll periodically for updates if real-time isn't critical.
+    *   For push/email: Integrate with third-party services (e.g., Firebase Cloud Messaging (FCM), SendGrid, AWS SNS).
+*   **Content:** Make notifications concise, clear, and actionable. Link directly to relevant parts of the application where possible.
+*   **Rate Limiting:** Avoid overwhelming users with too many notifications. Implement rate limiting or aggregation logic.
+*   **Backend Logic:** The backend should handle the logic for determining when a notification should be generated and sent, potentially triggered by game events, batch jobs, or admin actions.
+
+## 4. API and Data Management
+
+### 4.1. API Structure
+
+Design robust and maintainable APIs:
+
+-   **RESTful Principles:** Adhere to REST principles using appropriate HTTP verbs (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Use nouns for resource URLs (e.g., `/api/users`, `/api/game-sessions`).
+-   **Versioning:** Prefix API routes with a version number (e.g., `/api/v1/...`) to allow for future breaking changes without affecting older clients.
+-   **Request/Response Structure:** Use consistent JSON structures for requests and responses. Include status codes (e.g., 200, 201, 400, 401, 403, 404, 500) and meaningful error messages in responses. A standard error shape is recommended: `{ "error": { "code": "INVALID_INPUT", "message": "Detailed error message." } }`.
+-   **Middleware:** Utilize middleware (e.g., in Next.js API routes or using a framework like Express if applicable within API routes) for common concerns like:
+    *   Authentication/Authorization (verifying JWTs).
+    *   Input Validation (using libraries like Zod or Joi).
+    *   Logging requests/responses.
+    *   Rate Limiting.
+    *   Error Handling (centralized error catching).
+-   **Rate Limiting:** Implement rate limiting on public or sensitive endpoints to prevent abuse (e.g., using `upstash/ratelimit` or similar).
+-   **Data Transfer Objects (DTOs):** Use DTOs or validation schemas (like Zod schemas) to define the expected shape of request bodies and query parameters.
+-   **Security Headers:** Set appropriate security headers (e.g., `Content-Security-Policy`, `X-Content-Type-Options`, `Strict-Transport-Security`).
+
+### 4.2. Database Interactions
+
+Interact with the database efficiently and safely using Prisma:
+
+-   **Prisma ORM:** Use Prisma Client for all database operations. Leverage its type safety features.
+-   **Schema:** Define the database schema in `prisma/schema.prisma`. Use clear relation modes and indices.
+-   **Migrations:** Use `prisma migrate dev` for generating and applying SQL migration files during development. Use `prisma migrate deploy` in production environments. Never manually edit the database schema without creating a migration.
+-   **Transactions:** Use Prisma's interactive transactions (`$transaction`) for operations involving multiple dependent database writes to ensure atomicity (all succeed or all fail).
+-   **Query Optimization:**
+    *   Use `select` or `include` to fetch only the necessary data. Avoid over-fetching.
+    *   Use `where` clauses effectively with indexed fields.
+    *   Add database indices (`@@index` or `@index` in `schema.prisma`) to columns frequently used in `where` clauses, `orderBy`, or `join` operations (implicitly via relations).
+    *   Use pagination (`skip`, `take`) for retrieving large lists of data.
+-   **Connection Pooling:** Prisma handles connection pooling automatically. Configure the pool size appropriately based on expected load and database limits (via the connection URL parameters if needed).
+-   **Seeding:** Use Prisma's seeding mechanism (`prisma db seed`) for populating the database with initial or test data.
+-   **Security:** Avoid raw SQL queries (`$queryRaw`) unless absolutely necessary and sanitize all inputs to prevent SQL injection vulnerabilities if you do. Prisma Client methods are generally safe.
+
+### 4.3. Authentication and Security
+
+Implement robust security measures:
+
+-   **Authentication:** Use World ID via the Mini Kit as the primary authentication method (see section 3.8).
+-   **Authorization:** Implement role-based or permission-based access control if different user types exist (e.g., player vs. admin). Verify user permissions in API middleware or route handlers.
+-   **JWT Security:**
+    *   Use strong, secret keys for signing JWTs (store securely in environment variables).
+    *   Set reasonable expiration times (`exp`) for tokens.
+    *   Implement a token refresh mechanism if longer sessions are required.
+    *   Store JWTs securely on the client (e.g., httpOnly cookies are generally preferred over localStorage to mitigate XSS).
+-   **Input Validation:** Validate ALL data received from clients (request bodies, query parameters, headers) on the server-side using libraries like Zod. Reject invalid requests immediately.
+-   **OWASP Top 10:** Be mindful of common web vulnerabilities (XSS, CSRF, SQL Injection, Broken Authentication, etc.) and apply mitigation techniques. Use libraries/frameworks that help prevent these (e.g., Prisma for SQLi, httpOnly cookies for CSRF token storage).
+-   **Environment Variables:** Store ALL sensitive configuration (API keys, database URLs, JWT secrets, Cloudinary credentials) in environment variables (`.env` files, platform-level secrets). Do NOT commit secrets to Git.
+-   **HTTPS:** Enforce HTTPS for all communication. Configure HSTS (Strict-Transport-Security) header.
+-   **CORS:** Configure Cross-Origin Resource Sharing (CORS) policies correctly on the backend to allow requests only from trusted frontend origins.
+-   **Dependency Management:** Keep dependencies up-to-date and use tools like `npm audit` or `yarn audit` to check for known vulnerabilities.
+-   **Rate Limiting:** Protect against brute-force attacks on login/verification endpoints.
+
+## 5. Testing and Quality Assurance
+
+### 5.1. Testing Strategy
+
+Implement a comprehensive testing pyramid:
+
+-   **Unit Tests:**
+    *   **Target:** Individual functions, hooks, utility classes, Prisma queries (mocked), validation logic.
+    *   **Tools:** Jest, Vitest.
+    *   **Goal:** Verify smallest units of code work correctly in isolation. Fast execution.
+-   **Component Tests:**
+    *   **Target:** Individual React components (UI and interaction).
+    *   **Tools:** React Testing Library (RTL), Jest/Vitest.
+    *   **Goal:** Verify component rendering, props handling, user interactions (clicks, input), and accessibility without rendering child components deeply (mock children if needed).
+-   **Integration Tests:**
+    *   **Target:** Interactions between multiple units/components, API route handlers (mocking external services/DB), game mechanics (e.g., collision + scoring).
+    *   **Tools:** RTL (for component integration), Supertest (for API routes), Jest/Vitest.
+    *   **Goal:** Verify that different parts of the application work together as expected.
+-   **End-to-End (E2E) Tests:**
+    *   **Target:** Critical user flows through the entire application in a browser-like environment.
+    *   **Tools:** Playwright, Cypress.
+    *   **Goal:** Simulate real user scenarios (login -> play game -> check profile) to catch issues in the integrated system. Slower, used for crucial paths.
+-   **Performance Tests:**
+    *   **Target:** Game rendering loop frame rate, API response times under load, database query performance.
+    *   **Tools:** Browser DevTools (manual), k6, Artillery (for load testing), custom benchmarking scripts.
+    *   **Goal:** Ensure the application meets performance requirements.
+
+### 5.2. Error Handling
+
+Implement user-friendly and informative error handling:
+
+-   **React Error Boundaries:** Wrap major UI sections (e.g., game area, quiz, profile) with Error Boundary components to catch rendering errors in child components, log the error, and display a fallback UI instead of crashing the whole app.
+-   **API Error Responses:** Return standardized error responses from the API (see 4.1) with appropriate HTTP status codes and clear messages.
+-   **Client-Side Catching:** Use `try...catch` blocks for asynchronous operations (API calls) and handle potential errors gracefully (e.g., show toast notifications, update UI state).
+-   **Logging:** Implement structured logging on both client and server (e.g., using libraries like Pino, Winston, or platform services like Vercel/AWS logging). Log errors with context (user ID, request ID, stack trace).
+-   **User Feedback:** Provide user-friendly error messages that explain the problem (if possible) and suggest solutions or next steps (e.g., "Failed to save profile. Please check your connection and try again."). Avoid exposing technical details or stack traces to end-users.
+-   **Fallback UI:** Show loading states while data is fetching and skeleton screens or simple fallback UI if components fail to load or data is unavailable.
+-   **Retry Mechanisms:** Implement automatic retry logic (with exponential backoff) for transient network errors when making API calls (TanStack Query has this built-in).
+
+## 6. Documentation Standards
+
+Maintain clear and concise documentation:
+
+-   **JSDoc Comments:** Add JSDoc comments to functions, components (including props), types, and complex logic blocks explaining their purpose, parameters, and return values. Use tools to generate documentation from JSDoc if needed.
+-   **README Files:** Create `README.md` files in major directories (`/app`, `/components`, `/lib`, `/api`, etc.) explaining the purpose of the directory and how its contents are organized or used. The root `README.md` should cover project setup, running, testing, and deployment.
+-   **API Documentation:** Document API endpoints clearly. Specify the URL, HTTP method, required headers, request body format (with examples), possible query parameters, and expected response formats (success and error cases). Consider using Swagger/OpenAPI specifications and tools like Swagger UI.
+-   **Architecture Decisions:** Document significant architectural choices and the reasoning behind them in a dedicated `/docs` folder or wiki.
+-   **Game Mechanics/Quiz System:** Create specific documentation explaining how the game logic, state management, difficulty scaling, and quiz system work, especially for complex parts.
+-   **Brand Customization Guide:** Document how to create and apply brand configurations for white-labeling partners.
+-   **Changelog:** Maintain a `CHANGELOG.md` file to record significant changes, features, bug fixes, and breaking changes for each version/release.
+
+## 7. Implementation Considerations
+
+### 7.1. Mobile-First Approach
+
+Design and develop with mobile devices as the primary target:
+
+-   **Responsive Design:** Use responsive units (%, vw/vh, rem), media queries, and flexible layouts (Flexbox, Grid) to ensure the UI adapts seamlessly to various screen sizes and orientations. Test thoroughly on different mobile viewports.
+-   **Touch Interactions:** Prioritize touch events (swipe, tap, long press) for primary interactions, especially game controls. Ensure touch targets are sufficiently large and spaced apart.
+-   **Performance:** Be mindful of mobile device constraints (CPU, memory, network). Optimize JavaScript execution, rendering performance, and asset loading.
+-   **Viewport:** Configure the viewport meta tag correctly (`<meta name="viewport" content="width=device-width, initial-scale=1">`) to ensure proper scaling and rendering on mobile browsers.
+-   **Gestures:** Implement intuitive touch gestures for navigation and game controls. Avoid conflicts between browser gestures and app gestures.
+-   **Offline Support (Optional):** Consider using Service Workers for basic offline capabilities (e.g., caching static assets, showing a custom offline page) if relevant for a PWA.
+
+### 7.2. Accessibility (a11y)
+
+Ensure the platform is usable by people with disabilities:
+
+-   **WCAG Standards:** Aim to follow WCAG 2.1 Level AA guidelines.
+-   **Semantic HTML:** Use semantic HTML elements (`<nav>`, `<main>`, `<article>`, `<button>`, etc.) correctly to convey structure and meaning to assistive technologies.
+-   **Keyboard Navigation:** Ensure all interactive elements (buttons, links, form fields, game controls) are focusable and operable using only the keyboard in a logical order. Provide clear focus indicators.
+-   **Screen Reader Support:** Test with screen readers (e.g., VoiceOver, NVDA). Provide alternative text (`alt` attribute) for all meaningful images. Use ARIA attributes (`aria-label`, `aria-describedby`, `role`, etc.) where necessary to enhance accessibility, especially for custom components or dynamic content updates.
+-   **Color Contrast:** Ensure sufficient color contrast between text and background elements to meet WCAG AA requirements. Provide high-contrast theme options if possible.
+-   **Forms:** Label all form controls clearly using `<label>` tags associated with their inputs. Provide clear validation messages and error indicators.
+-   **Multimedia:** Provide captions or transcripts for video/audio content used in quizzes or elsewhere.
+-   **Game Accessibility:** While complex games can be challenging, consider accessibility options like adjustable speed, high-contrast modes, or alternative input methods if feasible. Ensure UI elements around the game are accessible.
+
+## 8. AI Assistance Boundaries
+
+While Cursor.ai is a powerful tool, adhere to these boundaries:
+
+*   **Oversight Required:** Do not blindly accept AI-generated code, especially for complex logic, security, or core game mechanics. Always review, understand, and test suggestions.
+*   **Security Review:** Security-critical code (authentication, authorization, input validation, cryptography) MUST undergo human review. Do not rely solely on AI for security implementation.
+*   **Architecture Decisions:** Major architectural decisions should be made and validated by the development team, not solely by the AI.
+*   **Database Schema:** Database schema changes suggested by the AI must be reviewed carefully by the team before generating migrations.
+*   **Performance Benchmarking:** AI suggestions for performance optimizations should be tested and benchmarked to verify their effectiveness.
+*   **Testing:** While AI can help write tests, ensure the tests cover the intended logic and edge cases thoroughly. The overall testing strategy requires human planning.
+*   **Refactoring:** Large-scale refactoring suggested by AI should be approached cautiously and reviewed in stages.
+

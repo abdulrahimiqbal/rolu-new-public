@@ -1,0 +1,231 @@
+# Comprehensive Cursor.ai Rules for Rolu Educational Gaming Platform
+
+## Introduction
+
+This document outlines the comprehensive rules and guidelines for utilizing Cursor.ai as an AI coding assistant throughout the development of the Rolu Educational Gaming Platform. These rules are designed to maintain code quality, ensure consistency across the codebase, and maximize development efficiency while adhering to project specifications.
+
+## Code Architecture and Organization
+
+### Project Structure
+
+The Rolu platform follows a Next.js 14 architecture with a clear separation of concerns. Cursor.ai should assist in maintaining this structure by organizing code into the following primary directories:
+
+```
+/app               # Next.js app directory for route components
+/components        # Reusable UI components
+  /ui              # Core UI components (shadcn)
+  /game            # Game-specific components
+  /quiz            # Quiz-related components
+  /brand           # Brand customization components
+  /admin           # Admin dashboard components
+/lib               # Utility functions and shared logic
+/api               # API route handlers
+/hooks             # Custom React hooks
+/contexts          # React context providers
+/types             # TypeScript type definitions
+/prisma            # Database schema and client
+/public            # Static assets
+/styles            # Global styles
+/locales           # Translation files
+```
+
+When suggesting code, Cursor.ai must respect this structure and place new files in the appropriate directories. For components, follow the "one component per file" rule with appropriate co-located styles and tests.
+
+### Naming Conventions
+
+The following naming conventions must be adhered to:
+
+- **Files**: Use kebab-case for file names (e.g., `game-controller.tsx`)
+- **Components**: Use PascalCase for component names (e.g., `GameController`)
+- **Functions**: Use camelCase for function names (e.g., `handleLaneSwitch`)
+- **Database Tables**: Use snake_case for table names (e.g., `game_sessions`)
+- **API Routes**: Use kebab-case for API endpoints (e.g., `/api/game-config`)
+- **CSS Classes**: Use BEM methodology with Tailwind CSS utility classes
+
+### Component Architecture
+
+Components should follow these guidelines:
+
+- Implement the compositional pattern for complex UI elements
+- Use atomic design principles (atoms, molecules, organisms)
+- Maintain clear prop interfaces with proper TypeScript typing
+- Separate business logic from presentation using custom hooks
+- Implement error boundaries for critical game components
+- Follow the 'single responsibility principle' for component design
+
+## Coding Standards
+
+### TypeScript Usage
+
+TypeScript must be used throughout the project with strict type checking:
+
+- Define explicit interfaces for all props, state, and API responses
+- Avoid using `any` type; use `unknown` with type guards when necessary
+- Create type definitions for game mechanics, quiz structures, and brand configurations
+- Use discriminated unions for state management
+- Implement generic types for reusable components and functions
+
+### Performance Optimization
+
+Cursor.ai should suggest performance optimizations:
+
+- Implement React.memo for pure components in game rendering loops
+- Use appropriate key strategies for lists and dynamic content
+- Suggest lazy loading for non-critical components and routes
+- Implement virtualization for long lists (quiz results, leaderboards)
+- Optimize asset loading with Next.js Image and dynamic imports
+- Use incremental static regeneration for semi-dynamic content
+
+### State Management
+
+Follow these state management guidelines:
+
+- Use TanStack Query for server state and data fetching
+- Implement React Context for global app state (user, settings, game configuration)
+- Use localStorage/sessionStorage for persistent preferences
+- Implement useReducer for complex local component state
+- Apply immutable state patterns throughout
+
+## Feature-Specific Guidelines
+
+### Game Implementation
+
+The 3-lane runner game should follow these patterns:
+
+- Implement a game loop using requestAnimationFrame
+- Use a state machine pattern for game states (ready, playing, paused, ended)
+- Separate collision detection logic from rendering
+- Use predictable randomization for obstacle and collectible generation
+- Implement progressive difficulty scaling based on distance traveled
+- Cache and preload game assets to prevent rendering issues
+
+### Game Assets must be uploaded to cloudinary and store asset links to the database (particles, powerups,player icon, Obstacles and any of the assets)
+
+### Quiz Integration
+
+For the educational quiz component:
+
+- Create a modular quiz system that accepts different question types
+- Implement timing mechanisms for question display
+- Support rich multimedia content in questions and answers
+- Build an explanation system for post-answer feedback
+- Design a scoring system that integrates with the main game progress
+
+### Localization Implementation
+
+For multi-language support:
+
+- Use Next.js i18n framework with namespaces for different content areas
+- Implement right-to-left (RTL) support for Arabic language
+- Create fallback mechanisms for missing translations
+- Support dynamic loading of translations based on user preferences
+- Implement efficient caching of translation assets
+
+### Brand Customization
+
+For the white-label functionality:
+
+- Create a theme provider that accepts brand configuration objects
+- Implement asset swapping for visual elements
+- Build a configuration validator to ensure brand assets meet requirements
+- Design lazy loading patterns for brand-specific assets
+- Create a theme switching mechanism that doesn't require page reload
+
+## API and Data Management
+
+### API Structure
+
+API endpoints should follow RESTful principles:
+
+- Use HTTP verbs appropriately (GET, POST, PUT, DELETE)
+- Implement consistent response structures with status codes
+- Version APIs when making breaking changes
+- Create middleware for authentication and error handling
+- Implement rate limiting for public endpoints
+
+### Database Interactions
+
+For database operations:
+
+- Use Prisma ORM for all database interactions
+- Implement transactions for multi-step operations
+- Create database migrations for schema changes
+- Use efficient indexing strategies for frequently queried fields
+- Implement connection pooling and query optimization
+
+### Authentication and Security
+
+For security implementations:
+
+- Integrate World ID for authentication following their Mini Kit guidelines
+- Implement proper JWT handling with expiration and refresh mechanisms
+- Follow OWASP security guidelines for API protection
+- Use environment variables for sensitive configuration
+- Implement input validation on all user-provided data
+- Use HTTPS for all communications
+- Implement proper CORS policies
+
+## Testing and Quality Assurance
+
+### Testing Requirements
+
+Cursor.ai should suggest and help implement tests:
+
+- Unit tests for utility functions and hooks
+- Component tests for UI elements using React Testing Library
+- Integration tests for game mechanics
+- API endpoint tests
+- End-to-end tests for critical user flows
+- Performance testing for game rendering cycles
+
+### Error Handling
+
+Implement comprehensive error handling:
+
+- Create error boundary components for isolating failures
+- Log errors with proper context information
+- Implement user-friendly error messages and recovery options
+- Create fallback UI for component loading failures
+- Implement retry mechanisms for network operations
+
+## Documentation Standards
+
+Cursor.ai should assist in maintaining documentation:
+
+- Add JSDoc comments for functions, components, and types
+- Create README files for major directories explaining their purpose
+- Document API endpoints with expected inputs and outputs
+- Maintain a changelog for significant updates
+- Create developer guides for game mechanics and customization
+
+## Implementation Considerations
+
+### Mobile-First Approach
+
+Since the app is primarily mobile-focused:
+
+- Prioritize touch controls over keyboard/mouse inputs
+- Implement responsive design that works on various screen sizes
+- Optimize for touch gestures for game controls
+- Consider device performance limitations for animations
+- Implement proper viewport handling for different mobile devices
+
+### Accessibility
+
+Maintain accessibility standards:
+
+- Follow WCAG 2.1 guidelines where applicable
+- Provide alternative text for all visual elements
+- Ensure color contrast meets accessibility standards
+- Support screen readers for educational content
+- Implement keyboard navigation for desktop users
+
+## AI Assistance Boundaries
+
+When using Cursor.ai, consider these boundaries:
+
+- AI should not generate complete game logic without developer oversight
+- Security-critical code requires human review
+- Database schema changes should be validated by the development team
+- AI suggestions for optimizations should be benchmarked
+- Authentication flows must be manually verified

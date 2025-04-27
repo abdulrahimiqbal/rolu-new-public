@@ -1,0 +1,34 @@
+---
+description: Frontend
+globs: 
+alwaysApply: false
+---
+# Frontend Plan
+## Tech Stack
+- **Framework**: Next.js
+- **Styling**: Tailwind CSS, shadcn for UI components
+## Page Structure
+1. **Home Page**:
+- Displays game cards for different brands.
+- Tab navigation for easy access to other sections.
+2. **Gameplay Page**:
+- Runner game interface with customizable elements.
+- Quiz interaction during gameplay.
+- Pause and game summary functionalities.
+3. **Profile Page**:
+- User information display (World ID username, XP, Rolu balance).
+- Avatar options for the user profile.
+- Wallet integration section for cryptocurrency.
+## Navigation
+- Implement a bottom navigation bar for seamless movement between pages.
+- Ensure mobile-first design principles are followed throughout the UI.
+## Components
+- **Customizable Game Elements**:
+- Backgrounds, player characters, obstacles, and collectibles.
+- **Quiz Component**:
+- Multiple-choice questions with real-time translations based on settings.
+- **Dashboard Interface**:
+- Clear access for admins to manage game settings.
+## Localization
+- Utilize i18n for language support.
+- Manage translations for quiz questions dynamically based on user demographics.
